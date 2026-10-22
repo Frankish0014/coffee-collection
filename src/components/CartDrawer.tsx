@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { DRAWER_SPRING, WhatsAppIcon } from "@/components/DetailDrawer";
+import { DRAWER_SPRING } from "@/components/DetailDrawer";
+import { GridIcon, WhatsAppIcon } from "@/components/icons";
 import ProductArt from "@/components/ProductArt";
 import { brand, mailtoLink, whatsappLink } from "@/data/brand";
 import { formatPrice, getProduct } from "@/data/products";
@@ -81,9 +82,10 @@ export default function CartDrawer() {
                 <button
                   type="button"
                   onClick={close}
-                  className="mt-8 font-mono text-[10px] tracking-[0.2em] text-crema uppercase hover:underline"
+                  className="mt-8 flex h-11 items-center gap-2.5 rounded-full bg-paper px-6 text-[10px] font-bold tracking-[0.2em] text-ink uppercase transition-colors hover:bg-crema"
                 >
-                  {brand.hero.cta} →
+                  <GridIcon className="h-3 w-3" />
+                  {brand.hero.cta}
                 </button>
               </div>
             ) : (

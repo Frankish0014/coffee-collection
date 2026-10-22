@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { GridIcon } from "@/components/icons";
 import ProductArt from "@/components/ProductArt";
 import { GARMENT_LAYOUT_TRANSITION } from "@/components/RackView";
 import { categories, formatPrice, getProduct, products } from "@/data/products";
@@ -170,7 +171,7 @@ export default function ProductFocus() {
         </div>
       </div>
 
-      <AnimatePresence>{product && <EdgeNav key="nav" />}</AnimatePresence>
+      <AnimatePresence>{product && <StageNav key="nav" productId={product.id} />}</AnimatePresence>
     </section>
   );
 }
@@ -200,7 +201,6 @@ function FlipGarment({ product, color, side }: { product: Product; color: ColorV
 }
 
 function Backdrop({ product, direction }: { product: Product; direction: 1 | -1 }) {
-  const unfocus = useShopStore((s) => s.unfocus);
   const index = products.findIndex((p) => p.id === product.id);
 
   return (
@@ -231,15 +231,6 @@ function Backdrop({ product, direction }: { product: Product; direction: 1 | -1 
           </motion.span>
         </AnimatePresence>
       </div>
-
-      <button
-        type="button"
-        onClick={unfocus}
-        className="group absolute top-20 left-5 flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] text-ink/60 uppercase transition-colors hover:text-ink md:left-10"
-      >
-        <span className="transition-transform group-hover:-translate-x-1">←</span> Back
-        <span className="-ml-1 hidden sm:inline">to collection</span>
-      </button>
 
       <div className="absolute bottom-14 left-6 hidden md:left-10 md:block">
         <AnimatePresence mode="popLayout" initial={false}>
@@ -410,46 +401,58 @@ function AvailabilityButton() {
     >
       <span className="absolute inset-0 translate-y-full bg-crema transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0" />
       <span className="relative transition-colors duration-300 group-hover:text-ink">See availability</span>
-      <span className="relative transition-all duration-300 group-hover:translate-x-1 group-hover:text-ink">→</span>
     </motion.button>
   );
 }
 
-function EdgeNav() {
+const pill =
+  "pointer-events-auto flex items-center gap-2 rounded-full border border-ink/15 bg-paper/85 font-mono uppercase text-ink/75 shadow-[0_8px_20px_-14px_rgba(26,20,17,0.6)] backdrop-blur-md transition-colors hover:border-ink hover:bg-ink hover:text-paper focus-visible:border-ink focus-visible:outline-none";
+
+/** Controls that sit above the product so the garment never covers them. */
+function StageNav({ productId }: { productId: string }) {
+  const unfocus = useShopStore((s) => s.unfocus);
   const next = useShopStore((s) => s.next);
   const prev = useShopStore((s) => s.prev);
+  const index = products.findIndex((p) => p.id === productId);
+  const prevProduct = products[(index - 1 + products.length) % products.length];
+  const nextProduct = products[(index + 1) % products.length];
 
-  const arrow = (dir: "prev" | "next") => (
-    <button
-      type="button"
-      onClick={dir === "prev" ? prev : next}
-      aria-label={dir === "prev" ? "Previous product" : "Next product"}
-      className={`group absolute top-1/2 flex h-16 w-14 -translate-y-1/2 items-center justify-center text-ink/50 transition-colors hover:text-ink focus-visible:text-ink focus-visible:outline-none md:w-16 ${
-        dir === "prev" ? "left-1 md:left-6" : "right-1 md:right-6"
-      }`}
-    >
-      <svg
-        viewBox="0 0 40 16"
-        className={`h-4 w-9 transition-transform duration-300 md:w-10 ${
-          dir === "prev" ? "rotate-180 group-hover:-translate-x-1.5" : "group-hover:translate-x-1.5"
+  const step = (dir: "prev" | "next") => {
+    const target = dir === "prev" ? prevProduct : nextProduct;
+    return (
+      <button
+        type="button"
+        onClick={dir === "prev" ? prev : next}
+        aria-label={`${dir === "prev" ? "Previous" : "Next"} product: ${target.name}`}
+        className={`${pill} absolute top-1/2 h-9 -translate-y-1/2 px-3.5 text-[9px] tracking-[0.18em] md:h-10 md:px-4 md:text-[10px] ${
+          dir === "prev" ? "left-2 md:left-6" : "right-2 md:right-6 md:flex-row-reverse"
         }`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
       >
-        <path d="M0 8 H38 M31 1 L38 8 L31 15" />
-      </svg>
-    </button>
-  );
+        <span className="font-semibold">{dir === "prev" ? "Prev" : "Next"}</span>
+        <span className="hidden max-w-[22ch] truncate opacity-60 lg:inline">{target.name}</span>
+      </button>
+    );
+  };
 
   return (
     <motion.div
+      className="pointer-events-none absolute inset-0 z-30"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { delay: 0.4, duration: 0.4 } }}
       exit={{ opacity: 0, transition: { duration: 0.15 } }}
     >
-      {arrow("prev")}
-      {arrow("next")}
+      <button
+        type="button"
+        onClick={unfocus}
+        className={`${pill} absolute top-[76px] left-4 h-9 px-4 text-[10px] tracking-[0.16em] md:top-20 md:left-10`}
+      >
+        <GridIcon className="h-3 w-3" />
+        <span className="font-semibold">
+          <span className="hidden sm:inline">Back to </span>Collection
+        </span>
+      </button>
+      {step("prev")}
+      {step("next")}
     </motion.div>
   );
 }

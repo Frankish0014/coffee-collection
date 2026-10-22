@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { WhatsAppIcon } from "@/components/DetailDrawer";
+import { MailIcon, PhoneIcon, WhatsAppIcon } from "@/components/icons";
 import { brand, launchListMessage, mailtoLink, telLink, whatsappLink } from "@/data/brand";
 import { useShopStore } from "@/store/useShopStore";
 
@@ -128,21 +128,27 @@ function Contact() {
   const rows = [
     {
       label: "Email",
+      action: "Send email",
       value: brand.contact.email,
       href: mailtoLink(`Hello ${brand.name}`),
       external: false,
+      Icon: MailIcon,
     },
     {
       label: "WhatsApp",
+      action: "Chat on WhatsApp",
       value: brand.contact.phoneDisplay,
       href: whatsappLink(`Hi ${brand.name}!`),
       external: true,
+      Icon: WhatsAppIcon,
     },
     {
       label: "Call",
+      action: "Call",
       value: brand.contact.phoneDisplay,
       href: telLink,
       external: false,
+      Icon: PhoneIcon,
     },
   ];
 
@@ -166,17 +172,15 @@ function Contact() {
               href={row.href}
               target={row.external ? "_blank" : undefined}
               rel={row.external ? "noreferrer" : undefined}
+              aria-label={`${row.action}: ${row.value}`}
               className="group grid grid-cols-[88px_1fr_auto] items-center gap-4 py-6 md:grid-cols-[160px_1fr_auto] md:py-8"
             >
-              <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-ink/45 uppercase">
-                {row.label === "WhatsApp" && <WhatsAppIcon className="h-3 w-3" />}
-                {row.label}
-              </span>
+              <span className="font-mono text-[10px] tracking-[0.2em] text-ink/45 uppercase">{row.label}</span>
               <span className="min-w-0 text-[clamp(17px,3.6vw,44px)] leading-none font-black tracking-[-0.04em] break-words transition-transform duration-500 group-hover:translate-x-2">
                 {row.value}
               </span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/20 transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-paper">
-                ↗
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/20 transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-paper">
+                <row.Icon className="h-4 w-4" />
               </span>
             </a>
           </motion.li>

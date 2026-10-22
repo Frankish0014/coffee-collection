@@ -58,7 +58,7 @@ export default function ProductArt({ product, color, side, className }: ArtProps
       <img
         src={color.images[side]}
         alt={`${product.name} in ${color.name.toLowerCase()}, ${side}`}
-        className={className}
+        className={`object-contain ${className ?? ""}`}
         draggable={false}
       />
     );

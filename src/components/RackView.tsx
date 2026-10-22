@@ -10,6 +10,7 @@ import {
   type MotionValue,
   type Variants,
 } from "framer-motion";
+import { GridIcon } from "@/components/icons";
 import ProductArt, { ART_WIDTH, HOOK_Y } from "@/components/ProductArt";
 import { brand, launchListMessage, whatsappLink } from "@/data/brand";
 import { categories, products } from "@/data/products";
@@ -264,7 +265,7 @@ export default function RackView() {
         <div className="hidden h-px w-[24vw] bg-ink/10 md:block">
           <motion.div className="h-px origin-left bg-ink" style={{ scaleX: progress }} />
         </div>
-        <span className="ml-auto">Drag / Scroll ⟷</span>
+        <span className="ml-auto">Drag or scroll to browse</span>
       </motion.div>
     </section>
   );
@@ -368,10 +369,10 @@ function HeroSign({
             type="button"
             onClick={onExplore}
             tabIndex={hidden ? -1 : 0}
-            className="group flex h-11 items-center gap-3 rounded-full bg-paper px-6 text-[10px] font-bold tracking-[0.2em] text-ink uppercase transition-colors hover:bg-crema"
+            className="flex h-11 items-center gap-2.5 rounded-full bg-paper px-6 text-[10px] font-bold tracking-[0.2em] text-ink uppercase transition-colors hover:bg-crema"
           >
+            <GridIcon className="h-3 w-3" />
             {brand.hero.cta}
-            <span className="transition-transform group-hover:translate-x-1">→</span>
           </button>
           <a
             href={whatsappLink(launchListMessage)}
