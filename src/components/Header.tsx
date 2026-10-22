@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { brand } from "@/data/brand";
 import { selectCartCount, useShopStore } from "@/store/useShopStore";
 
 const link =
@@ -28,10 +29,13 @@ export default function Header() {
             unfocus();
             closeInfo();
           }}
-          className="justify-self-center text-[22px] leading-none font-black tracking-[-0.06em] text-ink focus-visible:outline-none"
-          aria-label="ITS US — back to the rack"
+          className="flex flex-col items-center justify-self-center leading-none text-ink focus-visible:outline-none"
+          aria-label={`${brand.name} — back to the collection`}
         >
-          ITS US<sup className="ml-0.5 align-super text-[9px] font-bold tracking-normal">®</sup>
+          <span className="text-[19px] font-black tracking-[-0.06em] md:text-[22px]">{brand.logo.primary}</span>
+          <span className="mt-[3px] font-mono text-[7px] font-medium tracking-[0.42em] md:text-[8px]">
+            {brand.logo.secondary}
+          </span>
         </button>
 
         <div className="flex items-center gap-1.5 justify-self-end md:gap-2">

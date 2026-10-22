@@ -6,9 +6,10 @@
 }
 
 @theme {
-  --color-paper: #fbfbf9;
-  --color-ink: #0b0b0b;
-  --color-volt: #c8ff1a;
+  --color-paper: #f5f1ea;
+  --color-ink: #1a1411;
+  --color-roast: #15100d;
+  --color-crema: #efa94a;
 
   --animate-marquee: marquee 28s linear infinite;
 
@@ -19,6 +20,16 @@
     to {
       transform: translate3d(-50%, 0, 0);
     }
+  }
+}
+
+:root {
+  --rack-y: 31vh;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --rack-y: 21vh;
   }
 }
 
@@ -37,7 +48,7 @@ body {
 }
 
 ::selection {
-  background: var(--color-volt);
+  background: var(--color-crema);
   color: var(--color-ink);
 }
 

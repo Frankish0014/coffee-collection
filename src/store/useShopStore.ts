@@ -1,9 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { products } from "@/data/products";
+import { getProduct, products } from "@/data/products";
 import type { CartItem, Side } from "@/types/product";
 
 type InfoPanel = "about" | "contact" | null;
+
+/**
+ * `fly`: garments travel between the rack and the stage (opening/closing).
+ * `slide`: the stage is open and products slide past each other.
+ */
+export type TransitionMode = "fly" | "slide";
 
 interface ShopState {
   focusedId: string | null;
@@ -11,6 +17,7 @@ interface ShopState {
   lastFocusedId: string;
   /** 1 = moving forward through the collection, -1 = backward. */
   direction: 1 | -1;
+  mode: TransitionMode;
   side: Side;
   colorByProduct: Record<string, string>;
   drawerOpen: boolean;
@@ -22,6 +29,8 @@ interface ShopState {
   unfocus: () => void;
   next: () => void;
   prev: () => void;
+  goTo: (id: string) => void;
+  setMode: (mode: TransitionMode) => void;
   setSide: (side: Side) => void;
   setColor: (productId: string, colorId: string) => void;
   openDrawer: () => void;
@@ -32,14 +41,14 @@ interface ShopState {
   closeInfo: () => void;
   addToCart: (item: Omit<CartItem, "key">) => void;
   setQuantity: (key: string, quantity: number) => void;
-  removeFromCart: (key: string) => void;
   /** Closes the top-most overlay. Returns false if nothing was open. */
   dismissTop: () => boolean;
 }
 
+const indexOf = (id: string | null) => products.findIndex((p) => p.id === id);
+
 const step = (id: string | null, delta: number) => {
-  const index = products.findIndex((p) => p.id === id);
-  const nextIndex = (index + delta + products.length) % products.length;
+  const nextIndex = (indexOf(id) + delta + products.length) % products.length;
   return products[nextIndex].id;
 };
 
@@ -49,6 +58,7 @@ export const useShopStore = create<ShopState>()(
       focusedId: null,
       lastFocusedId: products[0].id,
       direction: 1,
+      mode: "fly",
       side: "front",
       colorByProduct: {},
       drawerOpen: false,
@@ -56,18 +66,24 @@ export const useShopStore = create<ShopState>()(
       info: null,
       cart: [],
 
-      focus: (id) => set({ focusedId: id, lastFocusedId: id, side: "front", direction: 1 }),
-      unfocus: () => set({ focusedId: null, drawerOpen: false }),
-      next: () =>
+      focus: (id) =>
+        set({ focusedId: id, lastFocusedId: id, side: "front", direction: 1, mode: "fly" }),
+      unfocus: () => set({ focusedId: null, drawerOpen: false, mode: "fly" }),
+      next: () => get().goTo(step(get().focusedId, 1)),
+      prev: () => get().goTo(step(get().focusedId, -1)),
+      goTo: (id) =>
         set((s) => {
-          const id = step(s.focusedId, 1);
-          return { focusedId: id, lastFocusedId: id, direction: 1 };
+          if (id === s.focusedId) return {};
+          const from = indexOf(s.focusedId);
+          const to = indexOf(id);
+          const forward = (to - from + products.length) % products.length;
+          return {
+            focusedId: id,
+            lastFocusedId: id,
+            direction: forward <= products.length / 2 ? 1 : -1,
+          };
         }),
-      prev: () =>
-        set((s) => {
-          const id = step(s.focusedId, -1);
-          return { focusedId: id, lastFocusedId: id, direction: -1 };
-        }),
+      setMode: (mode) => set({ mode }),
       setSide: (side) => set({ side }),
       setColor: (productId, colorId) =>
         set((s) => ({ colorByProduct: { ...s.colorByProduct, [productId]: colorId } })),
@@ -86,7 +102,7 @@ export const useShopStore = create<ShopState>()(
           if (existing) {
             return {
               cart: s.cart.map((c) =>
-                c.key === key ? { ...c, quantity: c.quantity + item.quantity } : c,
+                c.key === key ? { ...c, quantity: Math.min(10, c.quantity + item.quantity) } : c,
               ),
             };
           }
@@ -99,20 +115,19 @@ export const useShopStore = create<ShopState>()(
               ? s.cart.filter((c) => c.key !== key)
               : s.cart.map((c) => (c.key === key ? { ...c, quantity } : c)),
         })),
-      removeFromCart: (key) => set((s) => ({ cart: s.cart.filter((c) => c.key !== key) })),
 
       dismissTop: () => {
         const s = get();
         if (s.drawerOpen) set({ drawerOpen: false });
         else if (s.cartOpen) set({ cartOpen: false });
         else if (s.info) set({ info: null });
-        else if (s.focusedId) set({ focusedId: null });
+        else if (s.focusedId) s.unfocus();
         else return false;
         return true;
       },
     }),
     {
-      name: "itsus-cart",
+      name: "coffee-collection-cart",
       partialize: (s) => ({ cart: s.cart }),
       skipHydration: true,
     },
@@ -120,9 +135,4 @@ export const useShopStore = create<ShopState>()(
 );
 
 export const selectCartCount = (s: ShopState) =>
-  s.cart.reduce((sum, item) => sum + item.quantity, 0);
-
-export const getColorId = (s: ShopState, productId: string) => {
-  const product = products.find((p) => p.id === productId);
-  return s.colorByProduct[productId] ?? product?.colors[0].id ?? "";
-};
+  s.cart.reduce((sum, item) => (getProduct(item.productId) ? sum + item.quantity : sum), 0);

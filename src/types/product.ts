@@ -1,25 +1,48 @@
-export type Size = "S" | "M" | "L" | "XL";
-
 export type Side = "front" | "back";
 
-export type GarmentKind = "tee" | "longsleeve" | "shirt" | "jacket";
+export type ProductKind =
+  | "tee"
+  | "hoodie"
+  | "sweatshirt"
+  | "cap"
+  | "mug"
+  | "bottle"
+  | "tote"
+  | "keychain";
+
+export type CategoryId =
+  | "tshirts"
+  | "hoodies"
+  | "sweatshirts"
+  | "caps"
+  | "mugs"
+  | "bottles"
+  | "totes"
+  | "accessories";
+
+export interface Category {
+  id: CategoryId;
+  label: string;
+  group: "apparel" | "accessories";
+  description: string;
+}
 
 export interface PrintStyle {
-  front: "none" | "chest" | "big";
-  back: "none" | "tag" | "statement";
+  front: "none" | "chest" | "big" | "bean";
+  back: "none" | "tag" | "statement" | "bean";
 }
 
 export interface ColorVariant {
   id: string;
-  /** Uppercase label shown in the UI, e.g. "BLACK". */
+  /** Uppercase label shown in the UI, e.g. "ESPRESSO". */
   name: string;
-  /** Garment base color. */
+  /** Product base color. */
   hex: string;
   /** Color used for prints/graphics on this variant. */
   ink: string;
   /**
-   * Optional photography. When present, these replace the procedural
-   * garment illustration for this variant.
+   * Optional photography. When present, these replace the illustrated
+   * product for this variant.
    */
   images?: Record<Side, string>;
 }
@@ -27,22 +50,19 @@ export interface ColorVariant {
 export interface Product {
   id: string;
   name: string;
-  /** Price in whole euros. */
-  price: number;
-  kind: GarmentKind;
+  category: CategoryId;
+  kind: ProductKind;
+  /** Price in RWF. `null` until confirmed — shown as "Price at launch". */
+  price: number | null;
   print: PrintStyle;
   colors: ColorVariant[];
-  /** Units in stock per size. 0 = sold out. */
-  stock: Record<Size, number>;
-  description: string;
-  details: string[];
-  shipping: string;
+  sizes: string[];
 }
 
 export interface CartItem {
   key: string;
   productId: string;
   colorId: string;
-  size: Size;
+  size: string;
   quantity: number;
 }

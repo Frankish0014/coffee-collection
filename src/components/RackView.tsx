@@ -10,12 +10,13 @@ import {
   type MotionValue,
   type Variants,
 } from "framer-motion";
-import GarmentArt, { ART_WIDTH, HOOK_Y } from "@/components/GarmentArt";
-import { formatPrice, products } from "@/data/products";
-import { useShopStore } from "@/store/useShopStore";
+import ProductArt, { ART_WIDTH, HOOK_Y } from "@/components/ProductArt";
+import { brand, launchListMessage, whatsappLink } from "@/data/brand";
+import { categories, products } from "@/data/products";
+import { useShopStore, type TransitionMode } from "@/store/useShopStore";
 import type { Product } from "@/types/product";
 
-export const RACK_Y = "31vh";
+export const RACK_Y = "var(--rack-y)";
 export const ITEM_W = "clamp(150px, min(18vw, 34vh), 250px)";
 export const GARMENT_LAYOUT_TRANSITION = {
   type: "spring",
@@ -42,9 +43,30 @@ const itemVariants: Variants = {
   }),
 };
 
+type Slot =
+  | { type: "hero" }
+  | { type: "section"; group: "apparel" | "accessories"; index: number }
+  | { type: "product"; product: Product; index: number };
+
+const SLOTS: Slot[] = (() => {
+  const slots: Slot[] = [{ type: "hero" }];
+  let lastGroup: string | null = null;
+  let section = 0;
+  products.forEach((product, index) => {
+    const group = categories[product.category].group;
+    if (group !== lastGroup) {
+      slots.push({ type: "section", group, index: ++section });
+      lastGroup = group;
+    }
+    slots.push({ type: "product", product, index });
+  });
+  return slots;
+})();
+
 export default function RackView() {
   const focusedId = useShopStore((s) => s.focusedId);
   const lastFocusedId = useShopStore((s) => s.lastFocusedId);
+  const mode = useShopStore((s) => s.mode);
   const colorByProduct = useShopStore((s) => s.colorByProduct);
   const focus = useShopStore((s) => s.focus);
 
@@ -60,9 +82,14 @@ export default function RackView() {
   const swing = useSpring(swingTarget, { stiffness: 140, damping: 7, mass: 0.7 });
 
   const isFocused = focusedId !== null;
-  const anchorIndex = Math.max(0, products.findIndex((p) => p.id === lastFocusedId));
+  const anchorSlot = Math.max(
+    0,
+    SLOTS.findIndex((s) => s.type === "product" && s.product.id === lastFocusedId),
+  );
+  // Matching dependencies tell Framer Motion to skip the rack→stage flight while sliding
+  // between products; a changing value forces fresh snapshots when opening/closing.
+  const layoutDependency = mode === "slide" ? "slide" : `rack-${focusedId ?? "none"}`;
 
-  // Eased scroll loop: wheel and drag move `target`, the loop glides `current` toward it.
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -105,16 +132,22 @@ export default function RackView() {
     };
   }, [scrollX, progress]);
 
-  // Re-center the (hidden) rack on the focused garment so it hangs back in view on close.
-  useEffect(() => {
+  const centerOn = (id: string, instant: boolean) => {
     const el = scrollerRef.current;
-    if (!el || !focusedId) return;
-    const item = el.querySelector<HTMLElement>(`[data-product="${focusedId}"]`);
-    if (!item) return;
+    const item = el?.querySelector<HTMLElement>(`[data-product="${id}"]`);
+    if (!el || !item) return;
     const max = el.scrollWidth - el.clientWidth;
     const centered = clamp(item.offsetLeft + item.offsetWidth / 2 - el.clientWidth / 2, 0, max);
-    target.current = current.current = centered;
-    el.scrollLeft = centered;
+    target.current = centered;
+    if (instant) {
+      current.current = centered;
+      el.scrollLeft = centered;
+    }
+  };
+
+  // Keep the (hidden) rack centered on the focused product so it hangs back in view on close.
+  useEffect(() => {
+    if (focusedId) centerOn(focusedId, true);
   }, [focusedId]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -152,7 +185,7 @@ export default function RackView() {
   };
 
   return (
-    <section aria-label="The rack" className="fixed inset-0 z-10">
+    <section aria-label="The collection" className="fixed inset-0 z-10">
       <RackBar hidden={isFocused} />
 
       <motion.div
@@ -165,24 +198,58 @@ export default function RackView() {
         style={{ touchAction: "pan-x" }}
       >
         <ul
-          className="relative flex w-max items-start gap-[2.5vw] px-[8vw]"
+          className="relative flex w-max items-start gap-[2.5vw] px-[6vw]"
           style={{ paddingTop: `calc(${RACK_Y} - ${ITEM_W} * ${HOOK_Y / ART_WIDTH})` }}
         >
-          {products.map((product, i) => (
-            <RackItem
-              key={product.id}
-              index={i}
-              product={product}
-              colorId={colorByProduct[product.id] ?? product.colors[0].id}
-              isFocused={product.id === focusedId}
-              hidden={isFocused && product.id !== focusedId}
-              delay={Math.abs(i - anchorIndex) * 0.05}
-              swing={swing}
-              onSelect={() => {
-                if (!dragged.current) focus(product.id);
-              }}
-            />
-          ))}
+          {SLOTS.map((slot, i) => {
+            const delay = Math.abs(i - anchorSlot) * 0.05;
+            const hidden = isFocused && !(slot.type === "product" && slot.product.id === focusedId);
+            const common = {
+              variants: itemVariants,
+              custom: delay,
+              initial: "enter",
+              animate: hidden ? "hidden" : "shown",
+            } as const;
+
+            if (slot.type === "hero") {
+              return (
+                <motion.li key="hero" {...common} className="relative shrink-0">
+                  <HeroSign
+                    onExplore={() => {
+                      if (!dragged.current) centerOn(products[0].id, false);
+                    }}
+                    swing={swing}
+                    hidden={hidden}
+                  />
+                </motion.li>
+              );
+            }
+            if (slot.type === "section") {
+              return (
+                <motion.li key={`section-${slot.group}`} {...common} className="relative shrink-0">
+                  <SectionTag group={slot.group} index={slot.index} swing={swing} />
+                </motion.li>
+              );
+            }
+            const { product } = slot;
+            return (
+              <RackItem
+                key={product.id}
+                {...common}
+                index={slot.index}
+                product={product}
+                colorId={colorByProduct[product.id] ?? product.colors[0].id}
+                isFocused={product.id === focusedId}
+                hidden={hidden}
+                mode={mode}
+                layoutDependency={layoutDependency}
+                swing={swing}
+                onSelect={() => {
+                  if (!dragged.current) focus(product.id);
+                }}
+              />
+            );
+          })}
         </ul>
       </motion.div>
 
@@ -192,9 +259,9 @@ export default function RackView() {
         className="pointer-events-none absolute inset-x-6 bottom-14 flex items-end justify-between font-mono text-[10px] tracking-[0.18em] text-ink/50 uppercase md:inset-x-10"
       >
         <span className="hidden sm:inline">
-          SS26 Collection — {String(products.length).padStart(2, "0")} pieces
+          {brand.collectionHeading} — {String(products.length).padStart(2, "0")} pieces
         </span>
-        <div className="hidden h-px w-[28vw] bg-ink/10 md:block">
+        <div className="hidden h-px w-[24vw] bg-ink/10 md:block">
           <motion.div className="h-px origin-left bg-ink" style={{ scaleX: progress }} />
         </div>
         <span className="ml-auto">Drag / Scroll ⟷</span>
@@ -217,7 +284,7 @@ function RackBar({ hidden }: { hidden: boolean }) {
           className={`absolute top-0 w-[3px] origin-top ${pos}`}
           style={{
             height: RACK_Y,
-            background: "linear-gradient(90deg, #bdbdbd, #f4f4f4 40%, #8a8a8a)",
+            background: "linear-gradient(90deg, #b9b2aa, #f2eee8 40%, #857d75)",
           }}
           initial={{ scaleY: 0 }}
           animate={{ scaleY: 1 }}
@@ -229,13 +296,123 @@ function RackBar({ hidden }: { hidden: boolean }) {
         style={{
           top: RACK_Y,
           background:
-            "linear-gradient(180deg, #fafafa 0%, #c9c9c9 30%, #8d8d8d 55%, #6b6b6b 70%, #d6d6d6 100%)",
-          boxShadow: "0 8px 18px -6px rgba(0,0,0,0.25)",
+            "linear-gradient(180deg, #f8f6f2 0%, #c8c1b8 30%, #8b837a 55%, #6a635b 70%, #d4cdc4 100%)",
+          boxShadow: "0 8px 18px -6px rgba(40,25,15,0.3)",
         }}
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
         transition={{ duration: 1.1, ease: [0.76, 0, 0.24, 1], delay: 0.2 }}
       />
+    </motion.div>
+  );
+}
+
+/** Two cords from the rack, like a sign hanging in a shop window. */
+function Cords({ height }: { height: number }) {
+  return (
+    <>
+      {["left-[14%]", "right-[14%]"].map((pos) => (
+        <span key={pos} aria-hidden className={`absolute top-0 ${pos} flex flex-col items-center`}>
+          <span className="block h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-[#2c2622]" />
+          <span className="block w-px bg-[#2c2622]/60" style={{ height }} />
+        </span>
+      ))}
+    </>
+  );
+}
+
+function HeroSign({
+  onExplore,
+  swing,
+  hidden,
+}: {
+  onExplore: () => void;
+  swing: MotionValue<number>;
+  hidden: boolean;
+}) {
+  const rotate = useTransform(swing, (v) => v * 0.25);
+  return (
+    <motion.div
+      className="relative w-[min(520px,82vw)] pt-9"
+      style={{ rotate, transformOrigin: "50% 0%" }}
+    >
+      <Cords height={36} />
+      <div className="relative rounded-[3px] bg-roast p-6 text-paper shadow-[0_30px_60px_-30px_rgba(26,20,17,0.7)] md:p-9">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full bg-crema px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.18em] text-ink uppercase">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ink/60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-ink" />
+            </span>
+            {brand.status}
+          </span>
+          <span className="font-mono text-[10px] tracking-[0.2em] text-paper/50 uppercase">
+            {brand.hero.eyebrow}
+          </span>
+        </div>
+
+        <h1 className="mt-5 text-[clamp(32px,4.1vw,62px)] leading-[0.92] font-black tracking-[-0.05em] md:mt-6">
+          {brand.hero.title.map((line, i) => (
+            <span key={line} className={`block ${i === 1 ? "text-crema" : ""}`}>
+              {line}
+            </span>
+          ))}
+        </h1>
+
+        <p className="mt-4 max-w-[42ch] text-[12px] leading-relaxed text-paper/70 md:mt-5 md:text-[13px]">
+          {brand.hero.body}
+        </p>
+
+        <div className="mt-6 flex flex-wrap items-center gap-2.5 md:mt-7 md:gap-3">
+          <button
+            type="button"
+            onClick={onExplore}
+            tabIndex={hidden ? -1 : 0}
+            className="group flex h-11 items-center gap-3 rounded-full bg-paper px-6 text-[10px] font-bold tracking-[0.2em] text-ink uppercase transition-colors hover:bg-crema"
+          >
+            {brand.hero.cta}
+            <span className="transition-transform group-hover:translate-x-1">→</span>
+          </button>
+          <a
+            href={whatsappLink(launchListMessage)}
+            target="_blank"
+            rel="noreferrer"
+            tabIndex={hidden ? -1 : 0}
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-11 items-center rounded-full border border-paper/25 px-6 text-[10px] font-bold tracking-[0.2em] uppercase transition-colors hover:border-paper"
+          >
+            Join the launch list
+          </a>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function SectionTag({
+  group,
+  index,
+  swing,
+}: {
+  group: "apparel" | "accessories";
+  index: number;
+  swing: MotionValue<number>;
+}) {
+  const rotate = useTransform(swing, (v) => v * 0.9);
+  const section = brand.sections[group];
+  return (
+    <motion.div className="relative w-[150px] pt-12 md:w-[180px]" style={{ rotate, transformOrigin: "50% 0%" }}>
+      <span aria-hidden className="absolute top-0 left-1/2 flex -translate-x-1/2 flex-col items-center">
+        <span className="block h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-[#2c2622]" />
+        <span className="block h-[46px] w-px bg-[#2c2622]/60" />
+      </span>
+      <div className="relative border border-ink/15 bg-paper px-4 pt-6 pb-5 shadow-[0_18px_30px_-22px_rgba(26,20,17,0.5)]">
+        <span aria-hidden className="absolute top-2 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full border border-ink/25" />
+        <p className="font-mono text-[9px] tracking-[0.2em] text-ink/45 uppercase">
+          {String(index).padStart(2, "0")} — {section.eyebrow}
+        </p>
+        <h2 className="mt-2 text-[19px] leading-[1] font-black tracking-[-0.04em] md:text-[22px]">{section.title}</h2>
+      </div>
     </motion.div>
   );
 }
@@ -246,31 +423,39 @@ interface RackItemProps {
   colorId: string;
   isFocused: boolean;
   hidden: boolean;
-  delay: number;
+  mode: TransitionMode;
+  layoutDependency: string;
   swing: MotionValue<number>;
   onSelect: () => void;
+  variants: Variants;
+  custom: number;
+  initial: string;
+  animate: string;
 }
 
-function RackItem({ index, product, colorId, isFocused, hidden, delay, swing, onSelect }: RackItemProps) {
+function RackItem({
+  index,
+  product,
+  colorId,
+  isFocused,
+  hidden,
+  mode,
+  layoutDependency,
+  swing,
+  onSelect,
+  ...motionProps
+}: RackItemProps) {
   const color = product.colors.find((c) => c.id === colorId) ?? product.colors[0];
-  // Slight per-garment variation so the rack doesn't swing in lockstep.
+  // Slight per-item variation so the rack doesn't swing in lockstep.
   const rotate = useTransform(swing, (v) => v * (0.75 + ((index * 37) % 50) / 100));
 
   return (
-    <motion.li
-      data-product={product.id}
-      className="relative shrink-0"
-      style={{ width: ITEM_W }}
-      variants={itemVariants}
-      custom={delay}
-      initial="enter"
-      animate={hidden ? "hidden" : "shown"}
-    >
+    <motion.li data-product={product.id} className="relative shrink-0" style={{ width: ITEM_W }} {...motionProps}>
       <button
         type="button"
         onClick={onSelect}
         className="group block w-full cursor-[inherit] text-left focus-visible:outline-none"
-        aria-label={`View ${product.name}, ${formatPrice(product.price)}`}
+        aria-label={`View ${product.name}`}
         tabIndex={hidden ? -1 : 0}
       >
         <motion.div style={{ rotate, transformOrigin: `50% ${(HOOK_Y / 400) * 100}%` }}>
@@ -280,14 +465,16 @@ function RackItem({ index, product, colorId, isFocused, hidden, delay, swing, on
             ) : (
               <motion.div
                 layoutId={`garment-${product.id}`}
+                layoutDependency={layoutDependency}
+                layoutCrossfade={mode === "slide" ? undefined : false}
                 transition={GARMENT_LAYOUT_TRANSITION}
                 className="relative z-10 aspect-[3/4] w-full"
               >
-                <GarmentArt
+                <ProductArt
                   product={product}
                   color={color}
                   side="front"
-                  className="h-full w-full drop-shadow-[0_18px_16px_rgba(0,0,0,0.10)]"
+                  className="h-full w-full drop-shadow-[0_18px_16px_rgba(40,25,15,0.12)]"
                 />
               </motion.div>
             )}
@@ -295,14 +482,14 @@ function RackItem({ index, product, colorId, isFocused, hidden, delay, swing, on
         </motion.div>
 
         <div
-          className={`mt-2 flex items-baseline justify-between gap-2 px-[12%] font-mono text-[10px] tracking-[0.12em] uppercase transition-opacity duration-300 ${
+          className={`mt-2 flex items-baseline justify-between gap-2 px-[10%] font-mono text-[10px] tracking-[0.12em] uppercase transition-opacity duration-300 ${
             isFocused ? "opacity-0" : "text-ink/40 group-hover:text-ink group-focus-visible:text-ink"
           }`}
         >
           <span className="truncate">
             {String(index + 1).padStart(2, "0")} {product.name}
           </span>
-          <span className="shrink-0">{formatPrice(product.price)}</span>
+          <span className="shrink-0">{categories[product.category].label}</span>
         </div>
       </button>
     </motion.li>

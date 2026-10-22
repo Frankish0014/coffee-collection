@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { brand } from "@/data/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ITS US® — It's us. Never them.",
-  description: "Heavyweight essentials and outerwear. New drops.",
+  title: `${brand.name} — ${brand.status}`,
+  description: `${brand.campaign} ${brand.hero.body}`,
 };
 
 export default function RootLayout({

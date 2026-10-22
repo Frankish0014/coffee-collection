@@ -1,165 +1,169 @@
-import type { Product, Size } from "@/types/product";
+import type { Category, CategoryId, ColorVariant, Product } from "@/types/product";
 
-export const SIZES: Size[] = ["S", "M", "L", "XL"];
+export const APPAREL_SIZES = ["S", "M", "L", "XL"];
+export const ONE_SIZE = ["ONE SIZE"];
 
-const STANDARD_SHIPPING =
-  "Ships within 2–3 business days from our Rotterdam studio. Free EU shipping on orders over €150. Free returns within 14 days — items must be unworn with tags attached.";
+export const categories: Record<CategoryId, Category> = {
+  tshirts: {
+    id: "tshirts",
+    label: "T-shirts",
+    group: "apparel",
+    description:
+      "Everyday essentials with a clean, modern look. Designed to complement your personal style, our T-shirt collection brings coffee-inspired identity into a versatile wardrobe.",
+  },
+  hoodies: {
+    id: "hoodies",
+    label: "Hoodies",
+    group: "apparel",
+    description:
+      "Relaxed style with a refined edge. Explore hoodies that bring together contemporary streetwear aesthetics and the character of coffee culture.",
+  },
+  sweatshirts: {
+    id: "sweatshirts",
+    label: "Sweatshirts",
+    group: "apparel",
+    description:
+      "An effortless addition to your everyday wardrobe. Clean silhouettes and coffee-inspired design make these pieces easy to wear across different settings.",
+  },
+  caps: {
+    id: "caps",
+    label: "Caps",
+    group: "accessories",
+    description:
+      "Simple, versatile, and easy to style. Our cap collection adds a subtle expression of coffee-inspired identity to everyday outfits.",
+  },
+  mugs: {
+    id: "mugs",
+    label: "Mugs",
+    group: "accessories",
+    description:
+      "Make everyday coffee moments your own. Discover mugs that bring a considered aesthetic to your daily coffee ritual, whether at home or at work.",
+  },
+  bottles: {
+    id: "bottles",
+    label: "Bottles",
+    group: "accessories",
+    description:
+      "Practical essentials for life on the move. Discover bottle designs that combine a clean aesthetic with everyday convenience.",
+  },
+  totes: {
+    id: "totes",
+    label: "Tote Bags",
+    group: "accessories",
+    description:
+      "Everyday functionality meets understated style. Designed to complement your daily routine, tote bags offer a practical way to carry your essentials.",
+  },
+  accessories: {
+    id: "accessories",
+    label: "Accessories",
+    group: "accessories",
+    description:
+      "Small details, personal expression. Discover accessories that complement the collection and bring a little more of your style into everyday life.",
+  },
+};
+
+const INK_DARK = "#2a1d15";
+const INK_LIGHT = "#f1e9dd";
+
+const c = (id: string, name: string, hex: string, ink: string): ColorVariant => ({ id, name, hex, ink });
+
+const ESPRESSO = (ink = INK_LIGHT) => c("espresso", "ESPRESSO", "#2b1e17", ink);
+const CREAM = c("cream", "CREAM", "#efe8dc", INK_DARK);
+const OAT = c("oat", "OAT", "#d8cbb6", INK_DARK);
+const LATTE = c("latte", "LATTE", "#c7a37e", INK_DARK);
+const MOCHA = c("mocha", "MOCHA", "#6a4b3a", INK_LIGHT);
+const CHARCOAL = c("charcoal", "CHARCOAL", "#2e2c2b", INK_LIGHT);
 
 export const products: Product[] = [
   {
-    id: "essential-tee",
-    name: "Essential Tee",
-    price: 45,
+    id: "everyday-tee",
+    name: "Everyday Tee",
+    category: "tshirts",
     kind: "tee",
-    print: { front: "chest", back: "tag" },
-    colors: [
-      { id: "black", name: "BLACK", hex: "#151515", ink: "#f4f4f1" },
-      { id: "white", name: "WHITE", hex: "#f6f6f3", ink: "#111111" },
-      { id: "bone", name: "BONE", hex: "#e4dccb", ink: "#2a251d" },
-    ],
-    stock: { S: 12, M: 20, L: 8, XL: 0 },
-    description:
-      "The foundation. A boxy, dropped-shoulder tee cut from 240gsm combed cotton jersey with a dense, structured hand that holds its shape wash after wash.",
-    details: [
-      "100% organic combed cotton, 240gsm",
-      "Boxy fit, dropped shoulder",
-      "1×1 ribbed collar",
-      "Tonal chest embroidery",
-      "Garment dyed — slight variation is intentional",
-    ],
-    shipping: STANDARD_SHIPPING,
+    price: null,
+    print: { front: "chest", back: "statement" },
+    colors: [CREAM, ESPRESSO(), OAT],
+    sizes: APPAREL_SIZES,
   },
   {
-    id: "never-them-tee",
-    name: "Never Them Tee",
-    price: 55,
+    id: "beyond-the-cup-tee",
+    name: "Beyond the Cup Tee",
+    category: "tshirts",
     kind: "tee",
-    print: { front: "big", back: "statement" },
-    colors: [
-      { id: "white", name: "WHITE", hex: "#f6f6f3", ink: "#111111" },
-      { id: "black", name: "BLACK", hex: "#151515", ink: "#c8ff1a" },
-      { id: "ash", name: "ASH", hex: "#b9b9b6", ink: "#111111" },
-    ],
-    stock: { S: 3, M: 9, L: 14, XL: 6 },
-    description:
-      "Our manifesto, worn. Oversized heavyweight tee with a puff-printed front wordmark and the full statement screen printed across the back.",
-    details: [
-      "100% cotton, 280gsm heavyweight jersey",
-      "Oversized fit — size down for regular",
-      "Puff print front, water-based screen print back",
-      "Double-needle hems",
-    ],
-    shipping: STANDARD_SHIPPING,
+    price: null,
+    print: { front: "big", back: "tag" },
+    colors: [ESPRESSO("#efa94a"), CREAM, LATTE],
+    sizes: APPAREL_SIZES,
   },
   {
-    id: "oxford-button-down",
-    name: "Oxford Button-Down",
-    price: 110,
-    kind: "shirt",
-    print: { front: "none", back: "none" },
-    colors: [
-      { id: "white", name: "WHITE", hex: "#f8f8f6", ink: "#111111" },
-      { id: "sky", name: "SKY", hex: "#bcd3ea", ink: "#111111" },
-      { id: "black", name: "BLACK", hex: "#1a1a1a", ink: "#f4f4f1" },
-    ],
-    stock: { S: 4, M: 0, L: 7, XL: 5 },
-    description:
-      "A relaxed Oxford with a soft-roll button-down collar and a box pleat at the back yoke. Washed for a broken-in feel from the first wear.",
-    details: [
-      "100% cotton Oxford weave",
-      "Relaxed fit, curved shirttail hem",
-      "Button-down collar, single chest pocket",
-      "Corozo buttons",
-    ],
-    shipping: STANDARD_SHIPPING,
-  },
-  {
-    id: "coach-jacket",
-    name: "Coach Jacket",
-    price: 185,
-    kind: "jacket",
+    id: "ritual-hoodie",
+    name: "Ritual Hoodie",
+    category: "hoodies",
+    kind: "hoodie",
+    price: null,
     print: { front: "chest", back: "statement" },
-    colors: [
-      { id: "black", name: "BLACK", hex: "#121212", ink: "#f4f4f1" },
-      { id: "olive", name: "OLIVE", hex: "#4f5236", ink: "#e8e6d6" },
-      { id: "volt", name: "VOLT", hex: "#c8ff1a", ink: "#111111" },
-    ],
-    stock: { S: 2, M: 6, L: 6, XL: 2 },
-    description:
-      "Water-repellent nylon coach jacket with a snap front, lightweight mesh lining, and the full statement printed oversized across the back panel.",
-    details: [
-      "Shell: 100% recycled nylon taslan, DWR finish",
-      "Lining: polyester mesh",
-      "Snap-button front, two welt hand pockets",
-      "Adjustable drawcord hem",
-    ],
-    shipping: STANDARD_SHIPPING,
+    colors: [MOCHA, CHARCOAL, OAT],
+    sizes: APPAREL_SIZES,
   },
   {
-    id: "studio-longsleeve",
-    name: "Studio Longsleeve",
-    price: 65,
-    kind: "longsleeve",
-    print: { front: "chest", back: "statement" },
-    colors: [
-      { id: "white", name: "WHITE", hex: "#f6f6f3", ink: "#111111" },
-      { id: "black", name: "BLACK", hex: "#151515", ink: "#f4f4f1" },
-    ],
-    stock: { S: 10, M: 10, L: 10, XL: 4 },
-    description:
-      "A heavyweight longsleeve with ribbed cuffs and a clean chest mark. The back carries the statement in a quiet, small-caps print.",
-    details: [
-      "100% cotton, 260gsm jersey",
-      "Regular fit",
-      "Ribbed cuffs and collar",
-      "Screen printed front and back",
-    ],
-    shipping: STANDARD_SHIPPING,
+    id: "crema-sweatshirt",
+    name: "Crema Sweatshirt",
+    category: "sweatshirts",
+    kind: "sweatshirt",
+    price: null,
+    print: { front: "chest", back: "bean" },
+    colors: [LATTE, ESPRESSO(), CREAM],
+    sizes: APPAREL_SIZES,
   },
   {
-    id: "work-jacket",
-    name: "Work Jacket",
-    price: 210,
-    kind: "jacket",
+    id: "daily-cap",
+    name: "Daily Cap",
+    category: "caps",
+    kind: "cap",
+    price: null,
+    print: { front: "bean", back: "tag" },
+    colors: [ESPRESSO(), CREAM, LATTE],
+    sizes: ONE_SIZE,
+  },
+  {
+    id: "morning-mug",
+    name: "Morning Mug",
+    category: "mugs",
+    kind: "mug",
+    price: null,
+    print: { front: "big", back: "bean" },
+    colors: [CREAM, ESPRESSO(), c("sage", "SAGE", "#a9b39a", INK_DARK)],
+    sizes: ONE_SIZE,
+  },
+  {
+    id: "everyday-bottle",
+    name: "Everyday Bottle",
+    category: "bottles",
+    kind: "bottle",
+    price: null,
+    print: { front: "big", back: "bean" },
+    colors: [CHARCOAL, OAT, CREAM],
+    sizes: ONE_SIZE,
+  },
+  {
+    id: "market-tote",
+    name: "Market Tote",
+    category: "totes",
+    kind: "tote",
+    price: null,
+    print: { front: "bean", back: "statement" },
+    colors: [c("natural", "NATURAL", "#e9dfcc", INK_DARK), ESPRESSO()],
+    sizes: ONE_SIZE,
+  },
+  {
+    id: "bean-keychain",
+    name: "Bean Keychain",
+    category: "accessories",
+    kind: "keychain",
+    price: null,
     print: { front: "none", back: "tag" },
-    colors: [
-      { id: "tobacco", name: "TOBACCO", hex: "#8a5a32", ink: "#f1e9dc" },
-      { id: "navy", name: "NAVY", hex: "#1d2538", ink: "#e9e9e4" },
-      { id: "stone", name: "STONE", hex: "#cfc6b4", ink: "#2a251d" },
-    ],
-    stock: { S: 0, M: 3, L: 5, XL: 1 },
-    description:
-      "A boxy chore jacket in 12oz cotton canvas. Built for daily wear and made to age — expect it to soften and fade beautifully over time.",
-    details: [
-      "100% cotton canvas, 12oz",
-      "Boxy fit, dropped shoulder",
-      "Two front patch pockets",
-      "Metal shank buttons",
-      "Woven label at back neck",
-    ],
-    shipping: STANDARD_SHIPPING,
-  },
-  {
-    id: "boxy-heavyweight-tee",
-    name: "Boxy Heavyweight Tee",
-    price: 50,
-    kind: "tee",
-    print: { front: "none", back: "statement" },
-    colors: [
-      { id: "volt", name: "VOLT", hex: "#c8ff1a", ink: "#111111" },
-      { id: "ash", name: "ASH", hex: "#b9b9b6", ink: "#111111" },
-      { id: "black", name: "BLACK", hex: "#151515", ink: "#c8ff1a" },
-    ],
-    stock: { S: 8, M: 1, L: 0, XL: 9 },
-    description:
-      "Clean on the front, loud on the back. Cropped and boxy in a dense heavyweight jersey that drapes rather than clings.",
-    details: [
-      "100% cotton, 300gsm",
-      "Cropped boxy fit",
-      "Wide ribbed collar",
-      "Screen printed back",
-    ],
-    shipping: STANDARD_SHIPPING,
+    colors: [c("walnut", "WALNUT", "#6b4630", INK_LIGHT), c("maple", "MAPLE", "#c79a6b", INK_DARK)],
+    sizes: ONE_SIZE,
   },
 ];
 
@@ -167,6 +171,6 @@ export function getProduct(id: string) {
   return products.find((p) => p.id === id);
 }
 
-export function formatPrice(value: number) {
-  return `€${value.toFixed(0)}`;
+export function formatPrice(value: number | null) {
+  return value === null ? "Price at launch" : `RWF ${value.toLocaleString("en-US")}`;
 }
